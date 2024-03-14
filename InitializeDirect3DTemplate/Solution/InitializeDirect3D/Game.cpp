@@ -33,6 +33,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 
 Game::Game(HINSTANCE hInstance)
     : D3DApp(hInstance)
+    , mWorld(this)
 {
     // Estimate the scene bounding sphere manually since we know how the scene was constructed.
     // The grid is the "widest object" with a width of 20 and depth of 30.0f, and centered at
@@ -130,7 +131,7 @@ void Game::OnResize()
 void Game::Update(const GameTimer& gt)
 {
     OnKeyboardInput(gt);
-
+    mWorld.update(gt);
     // Cycle through the circular frame resource array.
     mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
     mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
@@ -202,6 +203,9 @@ void Game::Draw(const GameTimer& gt)
     // The root signature knows how many descriptors are expected in the table.
     mCommandList->SetGraphicsRootDescriptorTable(4, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
+
+   
+
     DrawSceneToShadowMap();
 
 	//
@@ -213,7 +217,9 @@ void Game::Draw(const GameTimer& gt)
 	//
 	// Compute SSAO.
 	// 
-	
+    
+
+
     mCommandList->SetGraphicsRootSignature(mSsaoRootSignature.Get());
     mSsao->ComputeSsao(mCommandList.Get(), mCurrFrameResource, 3);
 	
@@ -268,14 +274,16 @@ void Game::Draw(const GameTimer& gt)
     skyTexDescriptor.Offset(mSkyTexHeapIndex, mCbvSrvUavDescriptorSize);
     mCommandList->SetGraphicsRootDescriptorTable(3, skyTexDescriptor);
 
-    mCommandList->SetPipelineState(mPSOs["opaque"].Get());
-    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+    mWorld.draw();// add 
+
+    /*mCommandList->SetPipelineState(mPSOs["opaque"].Get());
+   DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
 
     mCommandList->SetPipelineState(mPSOs["debug"].Get());
     DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Debug]);
 
 	mCommandList->SetPipelineState(mPSOs["sky"].Get());
-	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Sky]);*/
 
     // Indicate a state transition on the resource usage.
     auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -589,7 +597,7 @@ void Game::LoadTextures()
         L"../../Textures/tile_nmap.dds",
         L"../../Textures/white1x1.dds",
         L"../../Textures/default_nmap.dds",
-        L"../../Textures/sunsetcube1024.dds"
+        L"../../Textures/desertcube1024.dds"
     };
 	
 	for(int i = 0; i < (int)texNames.size(); ++i)
@@ -1346,152 +1354,157 @@ void Game::BuildMaterials()
     mMaterials["sky"] = std::move(sky);
 }
 
-void Game::BuildRenderItems()
+//void Game::BuildRenderItems()
+//{
+//	auto skyRitem = std::make_unique<RenderItem>();
+//	XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
+//	skyRitem->TexTransform = MathHelper::Identity4x4();
+//	skyRitem->ObjCBIndex = 0;
+//	skyRitem->Mat = mMaterials["sky"].get();
+//	skyRitem->Geo = mGeometries["shapeGeo"].get();
+//	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//	skyRitem->IndexCount = skyRitem->Geo->DrawArgs["sphere"].IndexCount;
+//	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+//	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+//
+//	mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
+//	mAllRitems.push_back(std::move(skyRitem));
+//
+//    auto quadRitem = std::make_unique<RenderItem>();
+//    quadRitem->World = MathHelper::Identity4x4();
+//    quadRitem->TexTransform = MathHelper::Identity4x4();
+//    quadRitem->ObjCBIndex = 1;
+//    quadRitem->Mat = mMaterials["bricks0"].get();
+//    quadRitem->Geo = mGeometries["shapeGeo"].get();
+//    quadRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//    quadRitem->IndexCount = quadRitem->Geo->DrawArgs["quad"].IndexCount;
+//    quadRitem->StartIndexLocation = quadRitem->Geo->DrawArgs["quad"].StartIndexLocation;
+//    quadRitem->BaseVertexLocation = quadRitem->Geo->DrawArgs["quad"].BaseVertexLocation;
+//
+//    mRitemLayer[(int)RenderLayer::Debug].push_back(quadRitem.get());
+//    mAllRitems.push_back(std::move(quadRitem));
+//    
+//	auto boxRitem = std::make_unique<RenderItem>();
+//	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 1.0f, 2.0f)*XMMatrixTranslation(0.0f, 0.5f, 0.0f));
+//	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 0.5f, 1.0f));
+//	boxRitem->ObjCBIndex = 2;
+//	boxRitem->Mat = mMaterials["bricks0"].get();
+//	boxRitem->Geo = mGeometries["shapeGeo"].get();
+//	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
+//	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
+//	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
+//
+//	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
+//	mAllRitems.push_back(std::move(boxRitem));
+//
+//    auto skullRitem = std::make_unique<RenderItem>();
+//    XMStoreFloat4x4(&skullRitem->World, XMMatrixScaling(0.4f, 0.4f, 0.4f)*XMMatrixTranslation(0.0f, 1.0f, 0.0f));
+//    skullRitem->TexTransform = MathHelper::Identity4x4();
+//    skullRitem->ObjCBIndex = 3;
+//    skullRitem->Mat = mMaterials["skullMat"].get();
+//    skullRitem->Geo = mGeometries["skullGeo"].get();
+//    skullRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//    skullRitem->IndexCount = skullRitem->Geo->DrawArgs["skull"].IndexCount;
+//    skullRitem->StartIndexLocation = skullRitem->Geo->DrawArgs["skull"].StartIndexLocation;
+//    skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
+//
+//	mRitemLayer[(int)RenderLayer::Opaque].push_back(skullRitem.get());
+//	mAllRitems.push_back(std::move(skullRitem));
+//
+//    auto gridRitem = std::make_unique<RenderItem>();
+//    gridRitem->World = MathHelper::Identity4x4();
+//	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
+//	gridRitem->ObjCBIndex = 4;
+//	gridRitem->Mat = mMaterials["tile0"].get();
+//	gridRitem->Geo = mGeometries["shapeGeo"].get();
+//	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//    gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
+//    gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
+//    gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+//
+//	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
+//	mAllRitems.push_back(std::move(gridRitem));
+//
+//	XMMATRIX brickTexTransform = XMMatrixScaling(1.5f, 2.0f, 1.0f);
+//	UINT objCBIndex = 5;
+//	for(int i = 0; i < 5; ++i)
+//	{
+//		auto leftCylRitem = std::make_unique<RenderItem>();
+//		auto rightCylRitem = std::make_unique<RenderItem>();
+//		auto leftSphereRitem = std::make_unique<RenderItem>();
+//		auto rightSphereRitem = std::make_unique<RenderItem>();
+//
+//		XMMATRIX leftCylWorld = XMMatrixTranslation(-5.0f, 1.5f, -10.0f + i*5.0f);
+//		XMMATRIX rightCylWorld = XMMatrixTranslation(+5.0f, 1.5f, -10.0f + i*5.0f);
+//
+//		XMMATRIX leftSphereWorld = XMMatrixTranslation(-5.0f, 3.5f, -10.0f + i*5.0f);
+//		XMMATRIX rightSphereWorld = XMMatrixTranslation(+5.0f, 3.5f, -10.0f + i*5.0f);
+//
+//		XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
+//		XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
+//		leftCylRitem->ObjCBIndex = objCBIndex++;
+//		leftCylRitem->Mat = mMaterials["bricks0"].get();
+//		leftCylRitem->Geo = mGeometries["shapeGeo"].get();
+//		leftCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//		leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
+//		leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+//		leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+//
+//		XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
+//		XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
+//		rightCylRitem->ObjCBIndex = objCBIndex++;
+//		rightCylRitem->Mat = mMaterials["bricks0"].get();
+//		rightCylRitem->Geo = mGeometries["shapeGeo"].get();
+//		rightCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//		rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
+//		rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+//		rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+//
+//		XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
+//		leftSphereRitem->TexTransform = MathHelper::Identity4x4();
+//		leftSphereRitem->ObjCBIndex = objCBIndex++;
+//		leftSphereRitem->Mat = mMaterials["mirror0"].get();
+//		leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
+//		leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
+//		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+//		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+//
+//		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
+//		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
+//		rightSphereRitem->ObjCBIndex = objCBIndex++;
+//		rightSphereRitem->Mat = mMaterials["mirror0"].get();
+//		rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
+//		rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+//		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
+//		rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+//		rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+//
+//		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
+//		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
+//		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftSphereRitem.get());
+//		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
+//
+//		mAllRitems.push_back(std::move(leftCylRitem));
+//		mAllRitems.push_back(std::move(rightCylRitem));
+//		mAllRitems.push_back(std::move(leftSphereRitem));
+//		mAllRitems.push_back(std::move(rightSphereRitem));
+//	}
+//   
+//}
+
+void Game::BuildRenderItems() 
 {
-	auto skyRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
-	skyRitem->TexTransform = MathHelper::Identity4x4();
-	skyRitem->ObjCBIndex = 0;
-	skyRitem->Mat = mMaterials["sky"].get();
-	skyRitem->Geo = mGeometries["shapeGeo"].get();
-	skyRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	skyRitem->IndexCount = skyRitem->Geo->DrawArgs["sphere"].IndexCount;
-	skyRitem->StartIndexLocation = skyRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	skyRitem->BaseVertexLocation = skyRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
-	mAllRitems.push_back(std::move(skyRitem));
-    
-    auto quadRitem = std::make_unique<RenderItem>();
-    quadRitem->World = MathHelper::Identity4x4();
-    quadRitem->TexTransform = MathHelper::Identity4x4();
-    quadRitem->ObjCBIndex = 1;
-    quadRitem->Mat = mMaterials["bricks0"].get();
-    quadRitem->Geo = mGeometries["shapeGeo"].get();
-    quadRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    quadRitem->IndexCount = quadRitem->Geo->DrawArgs["quad"].IndexCount;
-    quadRitem->StartIndexLocation = quadRitem->Geo->DrawArgs["quad"].StartIndexLocation;
-    quadRitem->BaseVertexLocation = quadRitem->Geo->DrawArgs["quad"].BaseVertexLocation;
-
-    mRitemLayer[(int)RenderLayer::Debug].push_back(quadRitem.get());
-    mAllRitems.push_back(std::move(quadRitem));
-    
-	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 1.0f, 2.0f)*XMMatrixTranslation(0.0f, 0.5f, 0.0f));
-	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 0.5f, 1.0f));
-	boxRitem->ObjCBIndex = 2;
-	boxRitem->Mat = mMaterials["bricks0"].get();
-	boxRitem->Geo = mGeometries["shapeGeo"].get();
-	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
-	mAllRitems.push_back(std::move(boxRitem));
-
-    auto skullRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&skullRitem->World, XMMatrixScaling(0.4f, 0.4f, 0.4f)*XMMatrixTranslation(0.0f, 1.0f, 0.0f));
-    skullRitem->TexTransform = MathHelper::Identity4x4();
-    skullRitem->ObjCBIndex = 3;
-    skullRitem->Mat = mMaterials["skullMat"].get();
-    skullRitem->Geo = mGeometries["skullGeo"].get();
-    skullRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    skullRitem->IndexCount = skullRitem->Geo->DrawArgs["skull"].IndexCount;
-    skullRitem->StartIndexLocation = skullRitem->Geo->DrawArgs["skull"].StartIndexLocation;
-    skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(skullRitem.get());
-	mAllRitems.push_back(std::move(skullRitem));
-
-    auto gridRitem = std::make_unique<RenderItem>();
-    gridRitem->World = MathHelper::Identity4x4();
-	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
-	gridRitem->ObjCBIndex = 4;
-	gridRitem->Mat = mMaterials["tile0"].get();
-	gridRitem->Geo = mGeometries["shapeGeo"].get();
-	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
-    gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-    gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
-	mAllRitems.push_back(std::move(gridRitem));
-
-	XMMATRIX brickTexTransform = XMMatrixScaling(1.5f, 2.0f, 1.0f);
-	UINT objCBIndex = 5;
-	for(int i = 0; i < 5; ++i)
-	{
-		auto leftCylRitem = std::make_unique<RenderItem>();
-		auto rightCylRitem = std::make_unique<RenderItem>();
-		auto leftSphereRitem = std::make_unique<RenderItem>();
-		auto rightSphereRitem = std::make_unique<RenderItem>();
-
-		XMMATRIX leftCylWorld = XMMatrixTranslation(-5.0f, 1.5f, -10.0f + i*5.0f);
-		XMMATRIX rightCylWorld = XMMatrixTranslation(+5.0f, 1.5f, -10.0f + i*5.0f);
-
-		XMMATRIX leftSphereWorld = XMMatrixTranslation(-5.0f, 3.5f, -10.0f + i*5.0f);
-		XMMATRIX rightSphereWorld = XMMatrixTranslation(+5.0f, 3.5f, -10.0f + i*5.0f);
-
-		XMStoreFloat4x4(&leftCylRitem->World, rightCylWorld);
-		XMStoreFloat4x4(&leftCylRitem->TexTransform, brickTexTransform);
-		leftCylRitem->ObjCBIndex = objCBIndex++;
-		leftCylRitem->Mat = mMaterials["bricks0"].get();
-		leftCylRitem->Geo = mGeometries["shapeGeo"].get();
-		leftCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftCylRitem->IndexCount = leftCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		leftCylRitem->StartIndexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		leftCylRitem->BaseVertexLocation = leftCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&rightCylRitem->World, leftCylWorld);
-		XMStoreFloat4x4(&rightCylRitem->TexTransform, brickTexTransform);
-		rightCylRitem->ObjCBIndex = objCBIndex++;
-		rightCylRitem->Mat = mMaterials["bricks0"].get();
-		rightCylRitem->Geo = mGeometries["shapeGeo"].get();
-		rightCylRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightCylRitem->IndexCount = rightCylRitem->Geo->DrawArgs["cylinder"].IndexCount;
-		rightCylRitem->StartIndexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-		rightCylRitem->BaseVertexLocation = rightCylRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
-		leftSphereRitem->TexTransform = MathHelper::Identity4x4();
-		leftSphereRitem->ObjCBIndex = objCBIndex++;
-		leftSphereRitem->Mat = mMaterials["mirror0"].get();
-		leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
-		leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
-		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
-		rightSphereRitem->ObjCBIndex = objCBIndex++;
-		rightSphereRitem->Mat = mMaterials["mirror0"].get();
-		rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
-		rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-		rightSphereRitem->StartIndexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-		rightSphereRitem->BaseVertexLocation = rightSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightCylRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(leftSphereRitem.get());
-		mRitemLayer[(int)RenderLayer::Opaque].push_back(rightSphereRitem.get());
-
-		mAllRitems.push_back(std::move(leftCylRitem));
-		mAllRitems.push_back(std::move(rightCylRitem));
-		mAllRitems.push_back(std::move(leftSphereRitem));
-		mAllRitems.push_back(std::move(rightSphereRitem));
-	}
+    mWorld.buildScene();
 }
-
 void Game::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
 {
-    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+    /*UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
  
 	auto objectCB = mCurrFrameResource->ObjectCB->Resource();
 
-    // For each render item...
+     For each render item...
     for(size_t i = 0; i < ritems.size(); ++i)
     {
         auto ri = ritems[i];
@@ -1507,65 +1520,171 @@ void Game::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector
 		cmdList->SetGraphicsRootConstantBufferView(0, objCBAddress);
 
         cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
-    }
+    }*/
 }
+
+//void Game::DrawSceneToShadowMap()
+//{
+//    auto vp = mShadowMap->Viewport();
+//    mCommandList->RSSetViewports(1, &vp);
+//
+//    auto sr = mShadowMap->ScissorRect();
+//    mCommandList->RSSetScissorRects(1, &sr);
+//
+//    // Change to DEPTH_WRITE.
+//    auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+//        D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+//    mCommandList->ResourceBarrier(1, &transition1);
+//
+//    // Clear the back buffer and depth buffer.
+//    mCommandList->ClearDepthStencilView(mShadowMap->Dsv(), 
+//        D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+//
+//    auto dsv = mShadowMap->Dsv();
+//    // Specify the buffers we are going to render to.
+//    mCommandList->OMSetRenderTargets(0, nullptr, false, &dsv);
+//
+//    // Bind the pass constant buffer for the shadow map pass.
+//    UINT passCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants));
+//    auto passCB = mCurrFrameResource->PassCB->Resource();
+//    D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + 1*passCBByteSize;
+//    mCommandList->SetGraphicsRootConstantBufferView(1, passCBAddress);
+//
+//    mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
+//
+//   // DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+//
+//    // Change back to GENERIC_READ so we can read the texture in a shader.
+//    auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+//        D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+//    mCommandList->ResourceBarrier(1, &transition2);
+//}
+
 
 void Game::DrawSceneToShadowMap()
 {
-    auto vp = mShadowMap->Viewport();
-    mCommandList->RSSetViewports(1, &vp);
 
+    auto vp = mShadowMap->Viewport();
     auto sr = mShadowMap->ScissorRect();
+
+    mCommandList->RSSetViewports(1, &vp);
     mCommandList->RSSetScissorRects(1, &sr);
 
     // Change to DEPTH_WRITE.
     auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
         D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
     mCommandList->ResourceBarrier(1, &transition1);
 
+    UINT passCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants));
+
     // Clear the back buffer and depth buffer.
-    mCommandList->ClearDepthStencilView(mShadowMap->Dsv(), 
+    mCommandList->ClearDepthStencilView(mShadowMap->Dsv(),
         D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
+    // Set null render target because we are only going to draw to
+    // depth buffer.  Setting a null render target will disable color writes.
+    // Note the active PSO also must specify a render target count of 0.
+
     auto dsv = mShadowMap->Dsv();
-    // Specify the buffers we are going to render to.
     mCommandList->OMSetRenderTargets(0, nullptr, false, &dsv);
 
     // Bind the pass constant buffer for the shadow map pass.
-    UINT passCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants));
     auto passCB = mCurrFrameResource->PassCB->Resource();
-    D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + 1*passCBByteSize;
+    D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + 1 * passCBByteSize;
     mCommandList->SetGraphicsRootConstantBufferView(1, passCBAddress);
 
     mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
 
-    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+    const std::vector<RenderItem*>& ritems = mRitemLayer[(int)RenderLayer::Opaque];
+    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+    auto objectCB = mCurrFrameResource->ObjectCB->Resource();
+
+    // For each render item...
+    for (size_t i = 0; i < ritems.size(); ++i)
+    {
+        auto ri = ritems[i];
+        auto vbv = ri->Geo->VertexBufferView();
+        auto ibv = ri->Geo->IndexBufferView();
+
+        mCommandList.Get()->IASetVertexBuffers(0, 1, &vbv);
+        mCommandList.Get()->IASetIndexBuffer(&ibv);
+        mCommandList.Get()->IASetPrimitiveTopology(ri->PrimitiveType);
+
+        D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
+
+        mCommandList.Get()->SetGraphicsRootConstantBufferView(0, objCBAddress);
+
+        mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+    }
+
 
     // Change back to GENERIC_READ so we can read the texture in a shader.
     auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
         D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ);
+
     mCommandList->ResourceBarrier(1, &transition2);
 }
+
  
+//void Game::DrawNormalsAndDepth()
+//{
+//	mCommandList->RSSetViewports(1, &mScreenViewport);
+//    mCommandList->RSSetScissorRects(1, &mScissorRect);
+//
+//	auto normalMap = mSsao->NormalMap();
+//	auto normalMapRtv = mSsao->NormalMapRtv();
+//	
+//    // Change to RENDER_TARGET.
+//    auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
+//        D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+//    mCommandList->ResourceBarrier(1, &transition1);
+//
+//	// Clear the screen normal map and depth buffer.
+//	float clearValue[] = {0.0f, 0.0f, 1.0f, 0.0f};
+//    mCommandList->ClearRenderTargetView(normalMapRtv, clearValue, 0, nullptr);
+//    mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+//
+//	// Specify the buffers we are going to render to.
+//    auto dsv = DepthStencilView();
+//    mCommandList->OMSetRenderTargets(1, &normalMapRtv, true, &dsv);
+//
+//    // Bind the constant buffer for this pass.
+//    auto passCB = mCurrFrameResource->PassCB->Resource();
+//    mCommandList->SetGraphicsRootConstantBufferView(1, passCB->GetGPUVirtualAddress());
+//
+//    mCommandList->SetPipelineState(mPSOs["drawNormals"].Get());
+//
+//    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+//
+//    // Change back to GENERIC_READ so we can read the texture in a shader.
+//    auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
+//        D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
+//    mCommandList->ResourceBarrier(1, &transition2);
+//}
+
+
+
+
 void Game::DrawNormalsAndDepth()
 {
-	mCommandList->RSSetViewports(1, &mScreenViewport);
+    mCommandList->RSSetViewports(1, &mScreenViewport);
     mCommandList->RSSetScissorRects(1, &mScissorRect);
 
-	auto normalMap = mSsao->NormalMap();
-	auto normalMapRtv = mSsao->NormalMapRtv();
-	
+    auto normalMap = mSsao->NormalMap();
+    auto normalMapRtv = mSsao->NormalMapRtv();
+
     // Change to RENDER_TARGET.
     auto transition1 = CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
         D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
     mCommandList->ResourceBarrier(1, &transition1);
 
-	// Clear the screen normal map and depth buffer.
-	float clearValue[] = {0.0f, 0.0f, 1.0f, 0.0f};
+    // Clear the screen normal map and depth buffer.
+    float clearValue[] = { 0.0f, 0.0f, 1.0f, 0.0f };
     mCommandList->ClearRenderTargetView(normalMapRtv, clearValue, 0, nullptr);
     mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-	// Specify the buffers we are going to render to.
+    // Specify the buffers we are going to render to.
     auto dsv = DepthStencilView();
     mCommandList->OMSetRenderTargets(1, &normalMapRtv, true, &dsv);
 
@@ -1575,13 +1694,37 @@ void Game::DrawNormalsAndDepth()
 
     mCommandList->SetPipelineState(mPSOs["drawNormals"].Get());
 
-    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+    const std::vector<RenderItem*>& ritems = mRitemLayer[(int)RenderLayer::Opaque];
+    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+    auto objectCB = mCurrFrameResource->ObjectCB->Resource();
+
+    // For each render item...
+    for (size_t i = 0; i < ritems.size(); ++i)
+    {
+        auto ri = ritems[i];
+        auto vbv = ri->Geo->VertexBufferView();
+        auto ibv = ri->Geo->IndexBufferView();
+
+        mCommandList.Get()->IASetVertexBuffers(0, 1, &vbv);
+        mCommandList.Get()->IASetIndexBuffer(&ibv);
+        mCommandList.Get()->IASetPrimitiveTopology(ri->PrimitiveType);
+
+        D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex * objCBByteSize;
+
+        mCommandList.Get()->SetGraphicsRootConstantBufferView(0, objCBAddress);
+
+        mCommandList.Get()->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
+    }
 
     // Change back to GENERIC_READ so we can read the texture in a shader.
     auto transition2 = CD3DX12_RESOURCE_BARRIER::Transition(normalMap,
         D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
     mCommandList->ResourceBarrier(1, &transition2);
 }
+
+
+
+
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE Game::GetCpuSrv(int index)const
 {
