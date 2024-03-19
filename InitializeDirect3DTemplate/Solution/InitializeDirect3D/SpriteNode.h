@@ -5,9 +5,18 @@ class SpriteNode :
     public Entity
 {
 public:
-	SpriteNode(Game* game);
+	enum BackgroundType
+	{
+		Desert,
+		bricks0
+	};
+public:
+	SpriteNode(BackgroundType backgroundtype,Game* game);
+
 
 private:
 	virtual void		drawCurrent() const;
 	virtual void		buildCurrent();
+private:
+	std::string			mBackground;
 };

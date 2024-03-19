@@ -1,8 +1,21 @@
 #include "SpriteNode.h"
 #include "Game.h"
 
-SpriteNode::SpriteNode(Game* game) : Entity(game)
+SpriteNode::SpriteNode(BackgroundType backgroundtype,Game* game) : Entity(game)
 {
+	
+	switch (backgroundtype)
+	{
+	case (Desert):
+		mBackground = "Desert";		
+		break;
+	case (bricks0):
+		mBackground = "bricks0";
+		break;
+	default:
+		mBackground = "Desert";
+		break;
+	}
 }
 
 void SpriteNode::drawCurrent() const
@@ -86,7 +99,7 @@ void SpriteNode::buildCurrent()
 	renderer->World = getTransform();
 	XMStoreFloat4x4(&renderer->TexTransform, XMMatrixScaling(10.0f, 10.0f, 10.0f));
 	renderer->ObjCBIndex = game->getRenderItems().size();
-	renderer->Mat = game->getMaterials()["bricks0"].get();
+	renderer->Mat = game->getMaterials()[mBackground].get();
 	renderer->Geo = game->getGeometries()["shapeGeo"].get();
 	renderer->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	renderer->IndexCount = renderer->Geo->DrawArgs["box"].IndexCount;

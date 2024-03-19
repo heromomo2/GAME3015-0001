@@ -15,7 +15,7 @@ public:
 	explicit							World(Game* window);
 	void								update(const GameTimer& gt);
 //	void								OnPlayerInput(const GameTimer& gt);
-//	void								MoveRaptorSideToSide(const GameTimer& gt);
+	void								MoveRaptorSideToSide(const GameTimer& gt);
 	void								draw();
 
 	//void								loadTextures();
@@ -47,6 +47,7 @@ private:
 
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
+	SpriteNode*							mBackground2;
 	Aircraft*							mRaptor1;
 	Aircraft*							mRaptor2;
 	AircraftShadow*                     mPlayerAircraftShadow;// add 

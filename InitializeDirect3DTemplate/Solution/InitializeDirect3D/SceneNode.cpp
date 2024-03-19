@@ -162,18 +162,18 @@ XMFLOAT4X4 SceneNode::getTransform() const
 }
 
  //gettters
-//float SceneNode::getWorldPositionX()
-//{
-//	return (float)mWorldPosition.x;
-//}
-//float SceneNode::getWorldPositionY()
-//{
-//	return (float)mWorldPosition.y;
-//}
-//float SceneNode::getWorldPositionZ()
-//{
-//	return (float)mWorldPosition.z;
-//}
+float SceneNode::getWorldPositionX()
+{
+	return (float)mWorldPosition.x;
+}
+float SceneNode::getWorldPositionY()
+{
+	return (float)mWorldPosition.y;
+}
+float SceneNode::getWorldPositionZ()
+{
+	return (float)mWorldPosition.z;
+}
 
 
 void SceneNode::move(float x, float y, float z)

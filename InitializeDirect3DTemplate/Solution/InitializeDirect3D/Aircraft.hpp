@@ -1,6 +1,6 @@
 #pragma once
 #include "Entity.hpp"
-#include "AircraftShadow.hpp"
+//#include "AircraftShadow.hpp"
 #include <string>
 
 class Aircraft :
@@ -22,7 +22,7 @@ public:
 private:
 	virtual void		drawCurrent() const;
 	virtual void		buildCurrent();
-	AircraftShadow* mPlayerAircraftShadow;// add 
+	//AircraftShadow* mPlayerAircraftShadow;// add 
 
 
 private:

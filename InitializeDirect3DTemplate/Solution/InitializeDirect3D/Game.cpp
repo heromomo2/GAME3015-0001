@@ -57,7 +57,8 @@ bool Game::Initialize()
     // Reset the command list to prep for initialization commands.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
+	mCamera.SetPosition(0.0f, 10.0f, -15.0f);
+    mCamera.Pitch(3.14 / 10);
  
     mShadowMap = std::make_unique<ShadowMap>(md3dDevice.Get(),
         2048, 2048);
@@ -584,9 +585,18 @@ void Game::LoadTextures()
 		"bricksNormalMap",
 		"tileDiffuseMap",
 		"tileNormalMap",
+        "DesertDiffuseMap",// add
+        "DesertNormalMap", //add
+        "EagleDiffuseMap", //add
+        "EagleNormalMap", //add
+        "RaptorDiffuseMap",//add
+        "RaptorNormalMap",//add
 		"defaultDiffuseMap",
 		"defaultNormalMap",
 		"skyCubeMap"
+       
+        
+
 	};
 	
     std::vector<std::wstring> texFilenames =
@@ -595,9 +605,17 @@ void Game::LoadTextures()
         L"../../Textures/bricks2_nmap.dds",
         L"../../Textures/tile.dds",
         L"../../Textures/tile_nmap.dds",
+         L"../../Textures/Desert.dds", // add
+        L"../../Textures/DesertNMap.dds", //add
+        L"../../Textures/Eagle.dds", //add 
+        L"../../Textures/EagleNMap.dds", //add
+        L"../../Textures/Raptor.dds", //add
+        L"../../Textures/RaptorNor.dds", //add
         L"../../Textures/white1x1.dds",
         L"../../Textures/default_nmap.dds",
-        L"../../Textures/desertcube1024.dds"
+        L"../../Textures/desertcube1024.dds" 
+       
+
     };
 	
 	for(int i = 0; i < (int)texNames.size(); ++i)
@@ -742,7 +760,7 @@ void Game::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 18;
+	srvHeapDesc.NumDescriptors = 24;// 18 // 22
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -754,15 +772,22 @@ void Game::BuildDescriptorHeaps()
 
 	std::vector<ComPtr<ID3D12Resource>> tex2DList = 
 	{
-		mTextures["bricksDiffuseMap"]->Resource,
-		mTextures["bricksNormalMap"]->Resource,
-		mTextures["tileDiffuseMap"]->Resource,
-		mTextures["tileNormalMap"]->Resource,
-		mTextures["defaultDiffuseMap"]->Resource,
-		mTextures["defaultNormalMap"]->Resource
+		mTextures["bricksDiffuseMap"]->Resource,// 1
+		mTextures["bricksNormalMap"]->Resource,// 2
+		mTextures["tileDiffuseMap"]->Resource,// 3
+		mTextures["tileNormalMap"]->Resource,// 4
+        mTextures["DesertDiffuseMap"]->Resource,// add // 5
+        mTextures["DesertNormalMap"]->Resource,//add // 6
+        mTextures["EagleDiffuseMap"]->Resource,//add //7
+        mTextures["EagleNormalMap"]->Resource,//add // 8 
+        mTextures["RaptorDiffuseMap"]->Resource,//add //9
+        mTextures["RaptorNormalMap"]->Resource,//add // 10
+		mTextures["defaultDiffuseMap"]->Resource,// 11
+		mTextures["defaultNormalMap"]->Resource// 12
+       
 	};
 	
-	auto skyCubeMap = mTextures["skyCubeMap"]->Resource;
+	auto skyCubeMap = mTextures["skyCubeMap"]->Resource;// 13
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -834,26 +859,26 @@ void Game::BuildShadersAndInputLayout()
 	};
 
 	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mShaders["shadowVS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", nullptr, "PS", "ps_5_1");
+    mShaders["shadowOpaquePS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
     mShaders["shadowAlphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Shadows.hlsl", alphaTestDefines, "PS", "ps_5_1");
 	
     mShaders["debugVS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", nullptr, "PS", "ps_5_1");
+    mShaders["debugPS"] = d3dUtil::CompileShader(L"Shaders\\ShadowDebug.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mShaders["drawNormalsVS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["drawNormalsPS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", nullptr, "PS", "ps_5_1");
+    mShaders["drawNormalsPS"] = d3dUtil::CompileShader(L"Shaders\\DrawNormals.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mShaders["ssaoVS"] = d3dUtil::CompileShader(L"Shaders\\Ssao.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["ssaoPS"] = d3dUtil::CompileShader(L"Shaders\\Ssao.hlsl", nullptr, "PS", "ps_5_1");
+    mShaders["ssaoPS"] = d3dUtil::CompileShader(L"Shaders\\Ssao.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mShaders["ssaoBlurVS"] = d3dUtil::CompileShader(L"Shaders\\SsaoBlur.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["ssaoBlurPS"] = d3dUtil::CompileShader(L"Shaders\\SsaoBlur.hlsl", nullptr, "PS", "ps_5_1");
+    mShaders["ssaoBlurPS"] = d3dUtil::CompileShader(L"Shaders\\SsaoBlur.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
 	mShaders["skyVS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["skyPS"] = d3dUtil::CompileShader(L"Shaders\\Sky.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mInputLayout =
     {
@@ -1329,29 +1354,65 @@ void Game::BuildMaterials()
     mirror0->FresnelR0 = XMFLOAT3(0.98f, 0.97f, 0.95f);
     mirror0->Roughness = 0.1f;
 
-    auto skullMat = std::make_unique<Material>();
+    /*auto skullMat = std::make_unique<Material>();
     skullMat->Name = "skullMat";
     skullMat->MatCBIndex = 3;
     skullMat->DiffuseSrvHeapIndex = 4;
     skullMat->NormalSrvHeapIndex = 5;
     skullMat->DiffuseAlbedo = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
     skullMat->FresnelR0 = XMFLOAT3(0.6f, 0.6f, 0.6f);
-    skullMat->Roughness = 0.2f;
+    skullMat->Roughness = 0.2f;*/
+
+
+    auto Desert = std::make_unique<Material>();
+    Desert->Name = "Desert";
+    Desert->MatCBIndex = 4;
+    Desert->DiffuseSrvHeapIndex = 4;//6;
+    Desert->NormalSrvHeapIndex = 5;//7;
+    Desert->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    Desert->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
+    Desert->Roughness = 1.0f;
+ 
+
+    auto Eagle = std::make_unique<Material>();
+    Eagle->Name = "Eagle";
+    Eagle->MatCBIndex = 5;
+    Eagle->DiffuseSrvHeapIndex = 6; //8;
+    Eagle->NormalSrvHeapIndex = 7;// 9;
+    Eagle->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    Eagle->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+    Eagle->Roughness = 0.2f;
+
+
+    auto Raptor = std::make_unique<Material>();
+    Raptor->Name = "Raptor";
+    Raptor->MatCBIndex = 6;
+    Raptor->DiffuseSrvHeapIndex = 8; //8;
+    Raptor->NormalSrvHeapIndex = 9;// 9;
+    Raptor->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    Raptor->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
+    Raptor->Roughness = 0.2f;
 
     auto sky = std::make_unique<Material>();
     sky->Name = "sky";
-    sky->MatCBIndex = 4;
-    sky->DiffuseSrvHeapIndex = 6;
-    sky->NormalSrvHeapIndex = 7;
+    sky->MatCBIndex = 7;
+    sky->DiffuseSrvHeapIndex = 12;
+    sky->NormalSrvHeapIndex = 13;
     sky->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     sky->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
     sky->Roughness = 1.0f;
 
+
+
     mMaterials["bricks0"] = std::move(bricks0);
     mMaterials["tile0"] = std::move(tile0);
     mMaterials["mirror0"] = std::move(mirror0);
-    mMaterials["skullMat"] = std::move(skullMat);
+   /* mMaterials["skullMat"] = std::move(skullMat);*/
+    mMaterials["Desert"] = std::move(Desert);
+    mMaterials["Eagle"] = std::move(Eagle); 
+    mMaterials["Raptor"] = std::move(Raptor);
     mMaterials["sky"] = std::move(sky);
+   
 }
 
 //void Game::BuildRenderItems()

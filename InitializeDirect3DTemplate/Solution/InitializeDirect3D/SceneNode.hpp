@@ -70,9 +70,9 @@ public:
 	void					draw() const;
 	void					build();
 
-	//float				    getWorldPositionZ();// get Z
-	//float				    getWorldPositionY();// get Y
-	//float				    getWorldPositionX();// get X
+	float				    getWorldPositionZ();// get Z
+	float				    getWorldPositionY();// get Y
+	float				    getWorldPositionX();// get X
 	
 
 	XMFLOAT3				getWorldPosition() const;
