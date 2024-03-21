@@ -16,6 +16,8 @@ public:
 	void								update(const GameTimer& gt);
 //	void								OnPlayerInput(const GameTimer& gt);
 	void								MoveRaptorSideToSide(const GameTimer& gt);
+	void								LoopBackGround(const GameTimer& gt);
+	void                                PlayerBorderDistance(const GameTimer& gt);
 	void								draw();
 
 	//void								loadTextures();

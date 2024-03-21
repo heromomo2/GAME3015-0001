@@ -319,6 +319,10 @@ void Game::OnMouseDown(WPARAM btnState, int x, int y)
     SetCapture(mhMainWnd);
 }
 
+void Game::OnKeyDown(WPARAM btnState) // add for input
+{
+    ProcessEvents(btnState);
+}
 void Game::OnMouseUp(WPARAM btnState, int x, int y)
 {
     ReleaseCapture();
@@ -342,7 +346,7 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
  
 void Game::OnKeyboardInput(const GameTimer& gt)
 {
-	const float dt = gt.DeltaTime();
+	/*const float dt = gt.DeltaTime();
 
 	if(GetAsyncKeyState('W') & 0x8000)
 		mCamera.Walk(10.0f*dt);
@@ -354,11 +358,16 @@ void Game::OnKeyboardInput(const GameTimer& gt)
 		mCamera.Strafe(-10.0f*dt);
 
 	if(GetAsyncKeyState('D') & 0x8000)
-		mCamera.Strafe(10.0f*dt);
+		mCamera.Strafe(10.0f*dt);*/
 
 	mCamera.UpdateViewMatrix();
 }
- 
+void Game::ProcessEvents(WPARAM btnState)
+{
+    CommandQueue& commands = mWorld.getCommandQueue();
+    mplayer.handleRealtimeInput(commands);
+    mplayer.handleEvent(commands, btnState);
+}
 void Game::AnimateMaterials(const GameTimer& gt)
 {
 	

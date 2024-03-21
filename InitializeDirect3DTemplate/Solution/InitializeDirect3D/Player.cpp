@@ -43,7 +43,7 @@ Player::Player()
 	mKeyBinding[Input::W] = MoveUp;
 	mKeyBinding[Input::S] = MoveDown;
 	mKeyBinding[Input::P] = GetPosition;
-	myKeys = Input::P;
+	//myKeys = Input::P;
 	// Set initial action bindings
 	initializeActions();
 
@@ -179,13 +179,14 @@ void Player::initializeActions()
 	mActionBinding[MoveRight].action = derivedAction<Aircraft>(AircraftMover(PlayerSpeed, 0.f, 0.f));
 	mActionBinding[MoveUp].action = derivedAction<Aircraft>(AircraftMover(0.f, 0.f, PlayerSpeed));
 	mActionBinding[MoveDown].action = derivedAction<Aircraft>(AircraftMover(0.f, 0.f, -PlayerSpeed));
-	/*mActionBinding[GetPosition].action = [](SceneNode& s, const float dt) {
+	mActionBinding[GetPosition].action = [](SceneNode& s, const float dt) {
 		std::string ms;
 		ms = std::to_string(dt);
 
 
 
-		myfile.open("example.txt");
+		myfile.open("OurAirplane.txt", std::ios::app);
+		myfile << "\n";
 		myfile << " OurAirPlane_X: " << s.getWorldPositionX() << "\n";
 		myfile << " OurAirPlane_Y: " << s.getWorldPositionY() << "\n";
 		myfile << " OurAirPlane_Z: " << s.getWorldPositionZ() << "\n";
@@ -195,7 +196,7 @@ void Player::initializeActions()
 
 		myfile.close();
 
-		};*/
+		};
 	// cout version that doesnt work
 		/*{
 			std::string ms;
@@ -232,17 +233,17 @@ void Player::initializeActions()
 //			commands.push(mActionBinding[pair.second]);
 //	}
 //}
-//void Player::handleEvent(CommandQueue& commands, WPARAM btnState)
-//{
-//	Input::Keys tempKeys;
-//
-//	 tempKeys = (Input::Keys)btnState;
-//
-//	auto found = mKeyBinding.find(tempKeys);
-//	if (found != mKeyBinding.end() && !isRealtimeAction(found->second))
-//		commands.push(mActionBinding[found->second]);
-//
-//}
+void Player::handleEvent(CommandQueue& commands, WPARAM btnState)
+{
+	Input::Keys tempKeys;
+
+	 tempKeys = (Input::Keys)btnState;
+
+	auto found = mKeyBinding.find(tempKeys);
+	if (found != mKeyBinding.end() && !isRealtimeAction(found->second))
+		commands.push(mActionBinding[found->second]);
+
+}
 
 
 bool Player::isRealtimeAction(Action action)

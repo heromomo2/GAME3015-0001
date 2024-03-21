@@ -8,6 +8,7 @@
 #include "ShadowMap.h"
 #include "Ssao.h"
 #include "World.hpp"
+#include "Player.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -76,8 +77,10 @@ private:
     virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
     virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
     virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
+    virtual void OnKeyDown(WPARAM btnState)override;// add it for input
 
     void OnKeyboardInput(const GameTimer& gt);
+    void ProcessEvents(WPARAM btnState);// add it for input
     void AnimateMaterials(const GameTimer& gt);
     void UpdateObjectCBs(const GameTimer& gt);
     void UpdateMaterialBuffer(const GameTimer& gt);
@@ -171,7 +174,8 @@ private:
     XMFLOAT3 mRotatedLightDirections[3];
 
     POINT mLastMousePos;
-    World mWorld; //had
+    World mWorld; // add the world
+    Player mplayer; // add it for input
 
     // add
     public:

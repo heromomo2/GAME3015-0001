@@ -16,7 +16,7 @@ World::World(Game* game)
 	, mScrollSpeed(-5.0f)//(-1.0f)
 	, Floorloopcounter(0)
 	, IsRaptorOneLimitX(false)
-	, IsRaptorTwoLimitX(false)
+	, IsRaptorTwoLimitX(true)
 	, Raptor1_X(0.0)
 	, Raptor2_X(0.0)
 {
@@ -29,18 +29,18 @@ CommandQueue& World::getCommandQueue()
 
 void World::update(const GameTimer& gt)
 {
-	//const float dt = gt.DeltaTime();
+	const float dt = gt.DeltaTime();
 
-	//mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
+	mPlayerAircraft->setVelocity(0.0f,0.0f,0.0f);
 
 	// add it for unput
-	//while (!mCommandQueue.isEmpty())
+	while (!mCommandQueue.isEmpty())
 
-	//{
-	//	mSceneGraph->onCommand(mCommandQueue.pop(), dt);
+	{
+		mSceneGraph->onCommand(mCommandQueue.pop(), dt);
 
-	//}
-	////mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
+	}
+	mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
 
 
 	////Keep player's position inside the screen bounds, at least borderDistance units from the border
@@ -68,34 +68,34 @@ void World::update(const GameTimer& gt)
 
 
 	// loop background
-	if (mBackground->getWorldPosition().z < -50.0f)
-	{
-		// place back  the mBackground to it's original position
-		mBackground->setPosition(0, -50, 150.0);
-		// tracking how many times it loop.
-		Floorloopcounter = Floorloopcounter + 1;
-		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
-	}
-	else
-	{
-		// to move the background
-		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
-		
-	}
+	//if (mBackground->getWorldPosition().z < -50.0f)
+	//{
+	//	// place back  the mBackground to it's original position
+	//	mBackground->setPosition(0, -50, 150.0);
+	//	// tracking how many times it loop.
+	//	Floorloopcounter = Floorloopcounter + 1;
+	//	//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+	//}
+	//else
+	//{
+	//	// to move the background
+	//	mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+	//	
+	//}
 
-	if (mBackground2->getWorldPosition().z < -50.0f)
-	{
-		// place back  the mBackground to it's original position
-		mBackground2->setPosition(0, -50, 150.0);
-		// tracking how many times it loop.
-		Floorloopcounter = Floorloopcounter + 1;
-		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
-	}
-	else
-	{
-		// to move the background
-		mBackground2->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
-	}
+	//if (mBackground2->getWorldPosition().z < -50.0f)
+	//{
+	//	// place back  the mBackground to it's original position
+	//	mBackground2->setPosition(0, -50, 150.0);
+	//	// tracking how many times it loop.
+	//	Floorloopcounter = Floorloopcounter + 1;
+	//	//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+	//}
+	//else
+	//{
+	//	// to move the background
+	//	mBackground2->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+	//}
 
 	/*float playerWPX = mPlayerAircraft->getWorldPositionX();
 	float playerWPY = mPlayerAircraft->getWorldPositionY();
@@ -112,6 +112,8 @@ void World::update(const GameTimer& gt)
 
 	mSceneGraph->update(gt);
 	MoveRaptorSideToSide(gt);
+	LoopBackGround(gt);
+	PlayerBorderDistance(gt);
 }
 
 //void World::OnPlayerInput(const GameTimer& gt)
@@ -197,42 +199,6 @@ void World::buildScene()
 
 
 
-	//std::unique_ptr<AircraftShadow> raptorshadowtest(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
-	//auto raptorshadow = raptorshadowtest.get();
-	//raptorshadow->setPosition(0.0, 0.0, 0.0);
-	//raptorshadow->setScale(0.5, 0.5, 1.0);
-	//raptorshadow->setWorldRotation(0, 0, 0);
-	//mRaptor1->attachChild(std::move(raptorshadowtest));
-
-
-
-
-	//std::unique_ptr<AircraftShadow> raptorshadowtest2(new AircraftShadow(AircraftShadow::RaptorShadow, mGame));
-	//auto raptorshadow2 = raptorshadowtest2.get();
-	//raptorshadow2->setPosition(0.0, 0.0, 0.0);
-	//raptorshadow2->setScale(0.5, 0.5, 1.0);
-	//raptorshadow2->setWorldRotation(0, 0, 0);
-	//mRaptor2->attachChild(std::move(raptorshadowtest2));
-
-
-
-	//std::unique_ptr<AircraftShadow> Eagleshadowtest1(new AircraftShadow(AircraftShadow::EagleShadow, mGame));
-	//mPlayerAircraftShadow = Eagleshadowtest1.get();
-	//mPlayerAircraftShadow->setPosition(0.0, -0.01, -0.5);
-	//mPlayerAircraftShadow->setScale(0.5, 0.5, 0.5);
-	////mPlayerAircraftShadow->setWorldRotation(0, 0, 0);
-	////mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
-	//mPlayerAircraft->attachChild(std::move(Eagleshadowtest1));
-
-
-	//std::unique_ptr<SpriteNode> backgroundSprite(new SpriteNode(mGame));
-	//mBackground = backgroundSprite.get();
-	////mBackground->setPosition(mWorldBounds.left, mWorldBounds.top);
-	//mBackground->setPosition(0.0f, -20.0, 15.0);
-	//mBackground->setScale(50.0, 50.0, 50.0);
-	////mBackground->setVelocity(0, 0, -mScrollSpeed);
-	//mSceneGraph->attachChild(std::move(backgroundSprite));
-
 	std::unique_ptr<Skybox> skyboxSprite(new Skybox(mGame));
 	mSkybox = skyboxSprite.get();
 	mSkybox->setPosition(0, 0, 0);
@@ -273,14 +239,16 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 
 	Raptor1_X = mRaptor1->getWorldPositionX();
 	Raptor2_X = mRaptor2->getWorldPositionX();
-	float Speed = 100.0f;
+
+	float RaptorOneSpeed = 1000.0f;
+	float RaptorTwoSpeed = 1000.0f;
 
 	// first ememy air place
 	if (IsRaptorOneLimitX == false)
 	{
-		x_Raptor1 -= Speed;
+		x_Raptor1 -= RaptorOneSpeed;
 
-		if (Raptor1_X < 100.5 && IsRaptorOneLimitX != true)
+		if (Raptor1_X < -20.0f && IsRaptorOneLimitX != true)
 		{
 			IsRaptorOneLimitX = true;
 			/*myfile.open("example.txt");
@@ -291,13 +259,13 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 	}
 	else if (IsRaptorOneLimitX == true)
 	{
-		x_Raptor1 += Speed;
-		if (Raptor1_X > 2.0 && IsRaptorOneLimitX != false)
+		x_Raptor1 += RaptorOneSpeed;
+		if (Raptor1_X > 0.0 && IsRaptorOneLimitX != false)
 		{
 			IsRaptorOneLimitX = false;
 			/*myfile.open("example.txt");
-			myfile << "RaptorLimitXBounds: " << Raptor1_X << "\n";
-			myfile << " IsRaptorOneLimitX: " << IsRaptorOneLimitX;
+			/myfile << "RaptorLimitXBounds: " << Raptor1_X << "\n";
+			myfile << "IsRaptorOneLimitX: " << IsRaptorOneLimitX;
 			myfile.close();*/
 		}
 	}
@@ -305,9 +273,9 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 	// ememy 2
 	if (IsRaptorTwoLimitX == false)
 	{
-		x_Raptor2 -= Speed;
+		x_Raptor2 += RaptorTwoSpeed;
 
-		if (Raptor2_X < -2.0 && IsRaptorTwoLimitX != true)
+		if (Raptor2_X > 20.0f && IsRaptorTwoLimitX != true)
 		{
 			IsRaptorTwoLimitX = true;
 			/*myfile.open("example.txt");
@@ -318,8 +286,8 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 	}
 	else if (IsRaptorTwoLimitX == true)
 	{
-		x_Raptor2 += Speed;
-		if (Raptor2_X > -0.5 && IsRaptorTwoLimitX != false)
+		x_Raptor2 -= RaptorTwoSpeed;
+		if (Raptor2_X < -0.5 && IsRaptorTwoLimitX != false)
 		{
 			IsRaptorTwoLimitX = false;
 			/*myfile.open("example.txt");
@@ -331,4 +299,64 @@ void World::MoveRaptorSideToSide(const GameTimer& gt)
 
 	mRaptor1->setVelocity(x_Raptor1 * dt, 0, z_Raptor1 * dt);
 	mRaptor2->setVelocity(x_Raptor2 * dt, 0, z_Raptor2 * dt);
+}
+
+
+
+void World::PlayerBorderDistance(const GameTimer& gt)
+{
+	//Keep player's position inside the screen bounds, at least borderDistance units from the border
+	XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
+
+	if (position.x > 9.6f )
+	{
+		position.x = 9.6f ;
+	}
+	else if (position.x < -10.0f)
+	{
+		position.x = - 10.0f;
+	}
+	else if (position.z < -4.0f)
+	{
+		position.z = -4.0f;
+	}
+	else if (position.z > 26.0f)
+	{
+		position.z = 26.0f;
+	}
+
+	mPlayerAircraft->setPosition(position.x, position.y, position.z);
+}
+
+void World::LoopBackGround(const GameTimer& gt)
+{
+	// loop background
+	if (mBackground->getWorldPosition().z < -50.0f)
+	{
+		// place back  the mBackground to it's original position
+		mBackground->setPosition(0, -50, 150.0);
+		// tracking how many times it loop.
+		Floorloopcounter = Floorloopcounter + 1;
+		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+	}
+	else
+	{
+		// to move the background
+		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+
+	}
+
+	if (mBackground2->getWorldPosition().z < -50.0f)
+	{
+		// place back  the mBackground to it's original position
+		mBackground2->setPosition(0, -50, 150.0);
+		// tracking how many times it loop.
+		Floorloopcounter = Floorloopcounter + 1;
+		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+	}
+	else
+	{
+		// to move the background
+		mBackground2->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+	}
 }
