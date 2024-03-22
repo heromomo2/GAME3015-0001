@@ -39,8 +39,8 @@ Game::Game(HINSTANCE hInstance)
     // The grid is the "widest object" with a width of 20 and depth of 30.0f, and centered at
     // the world space origin.  In general, you need to loop over every world space vertex
     // position and compute the bounding sphere.
-    mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    mSceneBounds.Radius = sqrtf(10.0f*10.0f + 15.0f*15.0f);
+    mSceneBounds.Center = XMFLOAT3(0.0f, 10.0f, -15.0f);//(0.0f, 0.0f, 0.0f);
+    mSceneBounds.Radius = sqrtf(50.0f*50.0f + 55.0f*55.0f);//(10.0f*10.0f + 15.0f*15.0f);
 }
 
 Game::~Game()

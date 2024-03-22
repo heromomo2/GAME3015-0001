@@ -50,6 +50,9 @@ private:
 	Aircraft*							mPlayerAircraft;
 	SpriteNode*							mBackground;
 	SpriteNode*							mBackground2;
+	SpriteNode*                         mBackground3;
+	SpriteNode*                         mBackgroundArray[3];
+	int                                 mBackgroundIndex;
 	Aircraft*							mRaptor1;
 	Aircraft*							mRaptor2;
 	AircraftShadow*                     mPlayerAircraftShadow;// add 

@@ -11,6 +11,8 @@ World::World(Game* game)
 	, mRaptor2(nullptr)
 	, mBackground(nullptr)
 	, mBackground2(nullptr)
+	, mBackground3(nullptr)
+    , mBackgroundIndex(0)
 	, mWorldBounds(-1.5f, 1.5f, 200.0f, 0.0f) //Left, Right, Down, Up
 	, mSpawnPosition(0.f, 0.f)
 	, mScrollSpeed(-5.0f)//(-1.0f)
@@ -42,72 +44,6 @@ void World::update(const GameTimer& gt)
 	}
 	mPlayerAircraft->accelerate(0.0f, 0.0f, 0.0f);
 
-
-	////Keep player's position inside the screen bounds, at least borderDistance units from the border
-	//XMFLOAT3 position = mPlayerAircraft->getWorldPosition();
-
-	//if (position.x < -1.5)
-	//{
-	//	position.x = -1.5f;
-	//}
-	//else if (position.x > 1.5)
-	//{
-	//	position.x = 1.5f;
-	//}
-	//else if (position.z < -0.9)
-	//{
-	//	position.z = -0.9f;
-	//}
-	//else if (position.z > 0.9)
-	//{
-	//	position.z = 0.9f;
-	//}
-
-	//mPlayerAircraft->setPosition(position.x,position.y,position.z);
-
-
-
-	// loop background
-	//if (mBackground->getWorldPosition().z < -50.0f)
-	//{
-	//	// place back  the mBackground to it's original position
-	//	mBackground->setPosition(0, -50, 150.0);
-	//	// tracking how many times it loop.
-	//	Floorloopcounter = Floorloopcounter + 1;
-	//	//std::cout << "Floorloopcounter: "<< Floorloopcounter;
-	//}
-	//else
-	//{
-	//	// to move the background
-	//	mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
-	//	
-	//}
-
-	//if (mBackground2->getWorldPosition().z < -50.0f)
-	//{
-	//	// place back  the mBackground to it's original position
-	//	mBackground2->setPosition(0, -50, 150.0);
-	//	// tracking how many times it loop.
-	//	Floorloopcounter = Floorloopcounter + 1;
-	//	//std::cout << "Floorloopcounter: "<< Floorloopcounter;
-	//}
-	//else
-	//{
-	//	// to move the background
-	//	mBackground2->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
-	//}
-
-	/*float playerWPX = mPlayerAircraft->getWorldPositionX();
-	float playerWPY = mPlayerAircraft->getWorldPositionY();
-	float PlayerWPZ = mPlayerAircraft->getWorldPositionY();*/
-
-	//std::ofstream myfile;
-	//myfile.open("example.txt");
-	//myfile << "dicks\n";
-	//myfile.close();
-
-
-	//OnPlayerInput(gt);
 
 
 	mSceneGraph->update(gt);
@@ -180,7 +116,6 @@ void World::buildScene()
 	mPlayerAircraft = player.get();
 	mPlayerAircraft->setPosition(0, 1.0, 0.0);
 	mPlayerAircraft->setScale(3.0f, 0.0f, 3.0f);//(0.5, 0.01, 0.5);
-	//mPlayerAircraft->setVelocity(mScrollSpeed, 0.0, 0.0);
 	mSceneGraph->attachChild(std::move(player));
 
 	std::unique_ptr<Aircraft> enemy1(new Aircraft(Aircraft::Raptor, mGame));
@@ -198,7 +133,6 @@ void World::buildScene()
 	mSceneGraph->attachChild(std::move(enemy2));
 
 
-
 	std::unique_ptr<Skybox> skyboxSprite(new Skybox(mGame));
 	mSkybox = skyboxSprite.get();
 	mSkybox->setPosition(0, 0, 0);
@@ -210,12 +144,23 @@ void World::buildScene()
 	mBackground->setPosition(0.0f, -50, 50.0);
 	mBackground->setScale(100.0f, 100.0f, 100.0f);
 	mSceneGraph->attachChild(std::move(backgroundSprite));
+	mBackgroundArray[0] = mBackground;
 	
 	std::unique_ptr<SpriteNode> backgroundSprite2(new SpriteNode(SpriteNode::Desert, mGame));
 	mBackground2 = backgroundSprite2.get();
 	mBackground2->setPosition(0.0f, -50, 150.0);
 	mBackground2->setScale(100.0f, 100.0f, 100.0f);
 	mSceneGraph->attachChild(std::move(backgroundSprite2));
+	mBackgroundArray[1] = mBackground2;
+
+	std::unique_ptr<SpriteNode> backgroundSprite3(new SpriteNode(SpriteNode::bricks0, mGame));
+	mBackground3 = backgroundSprite3.get();
+	mBackground3->setPosition(0.0f, -50, 250.0);
+	mBackground3->setScale(100.0f, 100.0f, 100.0f);
+	mSceneGraph->attachChild(std::move(backgroundSprite3));
+	mBackgroundArray[2] = mBackground3;
+
+
 
 	std::unique_ptr<DebugShadowMap> shadowMap(new DebugShadowMap(mGame));
 	mDebugMap = shadowMap.get();
@@ -330,33 +275,75 @@ void World::PlayerBorderDistance(const GameTimer& gt)
 
 void World::LoopBackGround(const GameTimer& gt)
 {
-	// loop background
+	/* loop background
 	if (mBackground->getWorldPosition().z < -50.0f)
 	{
-		// place back  the mBackground to it's original position
-		mBackground->setPosition(0, -50, 150.0);
-		// tracking how many times it loop.
+		 place back  the mBackground to it's original position
+		mBackground->setPosition(0, -50, 250.0);
+		 tracking how many times it loop.
 		Floorloopcounter = Floorloopcounter + 1;
-		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+		std::cout << "Floorloopcounter: "<< Floorloopcounter;
 	}
 	else
 	{
-		// to move the background
+		 to move the background
 		mBackground->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
 
 	}
 
 	if (mBackground2->getWorldPosition().z < -50.0f)
 	{
-		// place back  the mBackground to it's original position
-		mBackground2->setPosition(0, -50, 150.0);
-		// tracking how many times it loop.
+		 place back  the mBackground to it's original position
+		mBackground2->setPosition(0, -50, 250.0);
+		 tracking how many times it loop.
 		Floorloopcounter = Floorloopcounter + 1;
-		//std::cout << "Floorloopcounter: "<< Floorloopcounter;
+		std::cout << "Floorloopcounter: "<< Floorloopcounter;
 	}
 	else
 	{
-		// to move the background
+		 to move the background
 		mBackground2->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
 	}
+
+	if (mBackground3->getWorldPosition().z < -50.0f)
+	{
+		 place back  the mBackground to it's original position
+		mBackground3->setPosition(0, -50, 250.0);
+		 tracking how many times it loop.
+		Floorloopcounter = Floorloopcounter + 1;
+		std::cout << "Floorloopcounter: "<< Floorloopcounter;
+	}
+	else
+	{
+		 to move the background
+		mBackground3->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+	}*/
+
+	//loop background
+	    if (mBackgroundArray[mBackgroundIndex]->getWorldPosition().z < -50.0f)
+		{
+			// place back  the mBackground to it's original position
+			mBackgroundArray[mBackgroundIndex]->setPosition(0, -50, 250.0);
+			
+			mBackgroundIndex++;
+
+			if (mBackgroundIndex >= 3)
+			{
+				mBackgroundIndex = 0;
+			}
+		}
+		else
+		{
+			// to move the background
+			//mBackgroundArray[mBackgroundIndex]->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+			for (int i = 0; i <= 2; i++) 
+			{
+				mBackgroundArray[i]->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+			}
+
+			/*mBackgroundArray[0]->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+			mBackgroundArray[1]->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime());
+			mBackgroundArray[2]->setVelocity(0, 0, mScrollSpeed + gt.DeltaTime())*/;
+		}
+
 }

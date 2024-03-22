@@ -119,7 +119,7 @@ void Player::handleRealtimeInput(CommandQueue& commands)
 	for (auto pair : mKeyBinding)
 	{
 		 //If key is pressed, lookup action and trigger corresponding command
-		if (GetAsyncKeyState(pair.first) && isRealtimeAction(pair.second))
+		if (/*(GetAsyncKeyState(pair.first)*/  GetKeyState(pair.first) < 0 && isRealtimeAction(pair.second))
 			commands.push(mActionBinding[pair.second]);
 	}
 }
